@@ -32,9 +32,17 @@ ticket.restore()
 */
 import { Http } from './http'
 
+import { getAgent }   from './agent'
+import { getContact } from './contact'
+import { getTicket }  from './ticket'
+
 class Freshdesk {
 
   http: Http
+
+  Agent   : ReturnType<typeof getAgent>
+  Contact : ReturnType<typeof getContact>
+  Ticket  : ReturnType<typeof getTicket>
 
   constructor (
     public url: string,
@@ -49,6 +57,9 @@ class Freshdesk {
      */
     this.validateAuth()
 
+    this.Agent   = getAgent(this.http)
+    this.Contact = getContact(this.http)
+    this.Ticket  = getTicket(this.http)
   }
 
   /**

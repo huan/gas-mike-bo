@@ -6,79 +6,80 @@
  */
 import { Http } from './http'
 
-const http: Http
+function getAgent (http: Http) {
 
-class Agent {
+  return class Agent {
 
-  agentObj: any = {}
+    agentObj: any = {}
 
-  /**
-   *
-   * 3. Method Search Agent
-   *
-   * @param
-   * options.email <String> email of agent
-   *
-   * @return
-   * <Array> of <Agent>, or null for not found.
-   *
-   */
-  static findAll (options: { email: string }) {
-
-    var email = options.email
-
-    var data = http.get('/api/v2/agents?email=' + encodeURIComponent(email))
-
-    if (!data || !data.length) return []
-
-    var agents = data.map(function (d: any) {
-      return new Agent(d.id)
-    })
-
-    return agents
-  }
-
-
-  constructor (id: number) {
     /**
-    * 1. existing agent, get it by ID
-    */
+     *
+     * 3. Method Search Agent
+     *
+     * @param
+     * options.email <String> email of agent
+     *
+     * @return
+     * <Array> of <Agent>, or null for not found.
+     *
+     */
+    static findAll (options: { email: string }) {
 
-    // load #id to agentObj
-    this.reloadAgent(id)
+      var email = options.email
 
-  }
+      var data = http.get('/api/v2/agents?email=' + encodeURIComponent(email))
 
-  /**
-   *
-   * Reload Agent Object Raw Data
-   *
-   */
-  reloadAgent (id?: number) {
-    if (typeof id === 'undefined') {
-      id = this.getAgentId()
+      if (!data || !data.length) return []
+
+      var agents = data.map(function (d: any) {
+        return new Agent(d.id)
+      })
+
+      return agents
     }
 
-    // v1: agentObj = http.get('/agents/' + id + '.json')
-    this.agentObj = http.get('/api/v2/agents/' + id)
+    constructor (id: number) {
+      /**
+      * 1. existing agent, get it by ID
+      */
 
-    return this
-  }
+      // load #id to agentObj
+      this.reloadAgent(id)
 
-  getAgentId () {
-    if (this.agentObj && this.agentObj.id) {
-      return this.agentObj.id
     }
 
-    return null
-  }
+    /**
+     *
+     * Reload Agent Object Raw Data
+     *
+     */
+    reloadAgent (id?: number) {
+      if (typeof id === 'undefined') {
+        id = this.getAgentId()
+      }
 
-  getAgentName () {
-    return this.agentObj.contact.name
-  }
+      // v1: agentObj = http.get('/agents/' + id + '.json')
+      this.agentObj = http.get('/api/v2/agents/' + id)
 
-  getRawObj () { return this.agentObj }
+      return this
+    }
+
+    getAgentId () {
+      if (this.agentObj && this.agentObj.id) {
+        return this.agentObj.id
+      }
+
+      return null
+    }
+
+    getAgentName () {
+      return this.agentObj.contact.name
+    }
+
+    getRawObj () { return this.agentObj }
+
+  }
 
 }
 
-export { Agent }
+export { getAgent }
