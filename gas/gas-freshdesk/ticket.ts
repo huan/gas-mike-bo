@@ -1,16 +1,62 @@
+/* eslint-disable camelcase */
 /******************************************************************
  *
  * Class Ticket
  * ------------
  */
 import { Http } from './http'
-import { validateHelpdeskObject } from './utils'
+import {
+  validateHelpdeskObject,
+  validateEmail,
+  validateInteger,
+}                           from './utils'
 
 let http: Http
 
 class Ticket {
 
   ticketObj: any = {}
+
+  /**
+   *
+   * 1. Method Search Ticket
+   *
+   * @return {Array} Tickets of search. null for not found
+   *
+   * @param {Object} options
+   *   email: email address of requester
+   *
+   * @document https://development.freshdesk.com/api#view_all_ticket
+   *
+   */
+  static findAll (
+    options?: {
+      email?: string,
+      requester_id?: number,
+    },
+  ) {
+
+    var data
+
+    if (options && options.email) { // Requester email
+      var email = validateEmail(options.email)
+      data = http.get('/api/v2/tickets?order_by=created_at&order_type=asc&email=' + encodeURIComponent(email))
+    } else if (options && options.requester_id) {
+      var requesterId = validateInteger(options.requester_id)
+      data = http.get('/api/v2/tickets?order_by=created_at&order_type=asc&requester_id=' + requesterId)
+    } else { // Uses the new_and_my_open filter.
+      data = http.get('/api/v2/tickets')
+
+    }
+
+    if (!data || !data.length) return []
+
+    var tickets = data.map(function (d: any) {
+      return new Ticket(d.id)
+    })
+
+    return tickets
+  }
 
   constructor (options: any) {
     if ((typeof options) === 'number') {

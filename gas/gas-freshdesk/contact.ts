@@ -11,6 +11,21 @@ class Contact {
 
   contactObj: any = {}
 
+  static findAll (options: { email: string }) {
+
+    var email = options.email
+
+    var data = http.get('/api/v2/contacts?email=' + encodeURIComponent(email))
+
+    if (!data || !data.length) return []
+
+    const contactList = data.map(function (d: any) {
+      return new Contact(d.id)
+    })
+
+    return contactList
+  }
+
   constructor (options: number | object) {
     if (typeof options === 'number') {
       /**

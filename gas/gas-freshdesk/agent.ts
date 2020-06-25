@@ -12,6 +12,33 @@ class Agent {
 
   agentObj: any = {}
 
+  /**
+   *
+   * 3. Method Search Agent
+   *
+   * @param
+   * options.email <String> email of agent
+   *
+   * @return
+   * <Array> of <Agent>, or null for not found.
+   *
+   */
+  static findAll (options: { email: string }) {
+
+    var email = options.email
+
+    var data = http.get('/api/v2/agents?email=' + encodeURIComponent(email))
+
+    if (!data || !data.length) return []
+
+    var agents = data.map(function (d: any) {
+      return new Agent(d.id)
+    })
+
+    return agents
+  }
+
+
   constructor (id: number) {
     /**
     * 1. existing agent, get it by ID
