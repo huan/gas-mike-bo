@@ -33,7 +33,8 @@
   "devDependencies": {
     "@chatie/eslint-config": "^0.8.1",
     "@chatie/git-scripts": "^0.6.2",
-    "@chatie/tsconfig": "^0.10.1"
+    "@chatie/tsconfig": "^0.10.1",
+    "sloc": "^0.2.1"
   },
   "git": {
     "scripts": {

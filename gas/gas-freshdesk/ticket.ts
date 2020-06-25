@@ -10,7 +10,7 @@ let http: Http
 
 class Ticket {
 
-  ticketObj: any
+  ticketObj: any = {}
 
   constructor (options: any) {
     if ((typeof options) === 'number') {

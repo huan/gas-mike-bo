@@ -10,7 +10,7 @@ const http: Http
 
 class Agent {
 
-  agentObj: any
+  agentObj: any = {}
 
   constructor (id: number) {
     /**
