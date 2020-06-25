@@ -6,6 +6,9 @@
   "scripts": {
     "push": "clasp push",
     "pull": "clasp pull",
+    "lint": "npm run lint:es && npm run lint:ts && npm run lint:md",
+    "lint:md": "markdownlint README.md",
+    "lint:ts": "tsc --noEmit",
     "test": "echo test"
   },
   "repository": {
@@ -28,6 +31,7 @@
     "@types/google-apps-script": "^1.0.14"
   },
   "devDependencies": {
+    "@chatie/eslint-config": "^0.8.1",
     "@chatie/tsconfig": "^0.10.1"
   }
 }

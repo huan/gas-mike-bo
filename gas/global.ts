@@ -22,7 +22,7 @@
 //  }
 //  if (CODE) eval(CODE)
 //  else      throw new Error('GasLog library initial failed! [' + errMsg + ']');
-//  
+//
 //  Logger.log('GasLog:', GasLog)
 //  Logger.log('GasLog.Printer:', GasLog.Printer)
 //
@@ -51,7 +51,7 @@ var log = new GasLog({
 * 2. find a named sheet
 *
 */
-function getSheet(name) {
+function getSheet(name: string) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name)
 
   // create log sheet if not exist

@@ -1,65 +1,50 @@
 function MailBot() {
-  'use strict'  
+  'use strict'
 
-  // DAYSPAN: how many day(s) looks back by search 
+  // DAYSPAN: how many day(s) looks back by search
   var DAYSPAN = 7
   // LIMIT: how many message(s) processed by run once
   var LIMIT   = 7
-  
+
   if ((typeof log)==='undefined') eval ('var log = new GasLog()')
 
-  if ((typeof GmailChannel)==='undefined') { // GmailChannel Initialization. (only if not initialized yet.)
-    var TTL = 3
-    var CODE = undefined
-    while (!CODE && TTL-->0) {
-      try {
-        CODE = UrlFetchApp.fetch('https://raw.githubusercontent.com/huan/gas-gmail-channel/master/src/gas-gmail-channel-lib.js?5').getContentText()
-      } catch (e) {
-        log(log.ERR, 'UrlFetchApp.fetch exception(ttl:%s): %s', TTL, e.message)
-        Utilities.sleep(1000)
-      }
-    }
-    if (CODE) {
-      eval(CODE)
-      GmailApp.getAliases() // Require permission
-    }
-  } // Class GmailChannel is ready for use now!
-
+  GmailApp.getAliases() // Require permission
+  const GmailChannel = getGmailChannel()
 
   log(log.DEBUG, 'InboxCleaner starting...')
 
-  
+
   ////////////////////////////////////////////////////
-  // 
+  //
   // Development & Testing
   //
 //  return development()
 //  return doZixiaChannel()
   //
   ////////////////////////////////////////////////////
-  
+
 
   /////////////////////////////////////////////////////////////////////
   //
   // Start Cleaning
-  
+
   var numProcceed = 0
-  
+
   var tasks = [
     doBulkChannel           // 0. 群发邮件，并且不是发到我的邮箱的
 
     , doBpWithCipherChannel // 1. 只发到 bp@pre 邮箱的，但是有我的名字
     , doBpZixiaChannel      // 2. 同时发给 zixia@pre 和  bp@pre 邮箱
     , doZixiaChannel        // 3. 只发到 zixia@pre 邮箱
-  
+
     , doFormChannel         // 4. 通过表单提交(JsForm)
     , doApplyChannel        // 5. PreAngel申请表(MikeCRM)
     , doIntviuChannel       // 6. 橙云面试视频(IntViu)
-  
+
     , doPlugAndPlayChannel  // 7. Plug and Play BP
     , doReviewChannel       // 8. PA项目评估
   ]
-  
+
   /**
   * Shuffle an array
   * http://stackoverflow.com/a/25984542/1123955
@@ -67,34 +52,34 @@ function MailBot() {
   */
   function fy(a, b, c, d) { c=a.length;while(c)b=Math.random()*(--c+1)|0,d=a[c],a[c]=a[b],a[b]=d }
   fy(tasks)
-  
+
   for (var i=0; i<tasks.length; i++) {
     numProcceed += tasks[i]()
-    
+
 //    Logger.log(tasks[i].name)
-    
+
     if (Gas.isYourTime()) {
       log(log.DEBUG, 'MailBot breaked after procceed %s mails, runned %s seconds', numProcceed, Gas.getLifeSeconds())
       break
     }
   }
-    
+
   // End Cleaning
   //
   /////////////////////////////////////////////////////////////////////
-   
+
   if (numProcceed) log(log.DEBUG, 'MailBot procceed %s mails, runned %s seconds', numProcceed, Gas.getLifeSeconds())
-  
-  
+
+
   return numProcceed
 
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
   //////////////////////////////////////////////////////////////////////////
   //
   // END: Main code above execute END here
@@ -102,8 +87,8 @@ function MailBot() {
   //////////////////////////////////////////////////////////////////////////
 
 
-  
-  
+
+
   /******************************************************
   *
   *
@@ -114,26 +99,26 @@ function MailBot() {
   *
   */
   function doBulkChannel() {
-    
+
     var whiteFromList = [
       'plugandplaychina.com',
       'plugandplaytechcenter.com',
       'plugandplaytc.com',
       'pnptc.com',
       'pnp.vc',
-      
-      'jsform.com',     
-      
+
+      'jsform.com',
+
       'microsoft.com',
       'google.com',
-      
+
       'tsinghua.org',
       'teec.org.cn',
     ]
-    
+
     var whiteToList = [
       'mstechdiscussions.com',
-      'tensorflow.org',     
+      'tensorflow.org',
       'w3c.org',
       'w3.org',
       'pnp.vc', // PNP 有自己独立的Channel
@@ -142,7 +127,7 @@ function MailBot() {
       'apache.org',
       'kaiyuanshe.org',
     ]
-    
+
     var bulkChannel = new GmailChannel ({
       name: 'bulk'
       , keywords: []
@@ -164,33 +149,33 @@ function MailBot() {
                 , '-融资申请'
                 , '-最简单的创业计划书'
                 , '-PreAngel创始人申请表'
-               ].join(' ') 
+               ].join(' ')
       + ' -from:(' + whiteFromList.join(' OR ') + ')'
       + ' -to:(' + whiteToList.join(' OR ') + ')'
-      
+
       , doneLabel: 'OutOfBulkChannel'
       , limit: LIMIT
       , res: {}
     })
-    
+
     bulkChannel.use(
-      Tracker.logOnStart     
-      
+      Tracker.logOnStart
+
       , Tracker.logOnTime                         // measure performance
-      
+
       , Mailer.skipFromInvalidSender              // 1s
       , Mailer.skipFromMyContacts                 // 1s
-      
+
       , Tracker.logOnTime                         // measure performance
       , Mailer.replySubmitGuideIfMailToBpAddress
-      
+
       , Tracker.logOnTime                         // measure performance
       , Mailer.labelAdd_ToBeDeleted
       , Mailer.moveToArchive
-      
+
       , Tracker.logOnTime                         // measure performance
       , Bizplaner.init                            // ?
-      
+
       , Bizplaner.skipInvalidBizplan
       , Mailer.labelAdd_BizPlan
 
@@ -207,23 +192,23 @@ function MailBot() {
       , Ticketor.noteCinderella
       , Tracker.logOnTime                         // measure performance
     )
-    
+
     return bulkChannel.done(Tracker.logOnEnd)
-    
+
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
   /******************************************************
   *
   *
@@ -234,7 +219,7 @@ function MailBot() {
   *
   */
   function doBpWithCipherChannel() {
-    
+
     // 1. to:bp with CIPHER
     var bpWithCipherChannel = new GmailChannel({
       name: 'bpWithCipher'
@@ -249,7 +234,7 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-        
+
     bpWithCipherChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_NotBizPlan
@@ -259,10 +244,10 @@ function MailBot() {
       , Mailer.skipFromInvalidSender
       , Mailer.skipFromMyContacts
       , Bizplaner.skipInvalidBizplan
-      
+
       , Mailer.labelDel_NotBizPlan
       , Mailer.labelAdd_BizPlan
-      
+
 
       , Ticketor.create
       , Ticketor.process
@@ -273,17 +258,17 @@ function MailBot() {
     )
 
     return bpWithCipherChannel.done(Tracker.logOnEnd)
-    
+
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   /***************************************************
   *
   *
@@ -294,7 +279,7 @@ function MailBot() {
   *
   */
   function doBpZixiaChannel() {
-    
+
     // 2. to:bp AND to:zixia
     var bpZixiaChannel = new GmailChannel({
       name: 'bpZixia'
@@ -309,7 +294,7 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-        
+
     bpZixiaChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_NotBizPlan
@@ -322,12 +307,12 @@ function MailBot() {
 
       , Mailer.labelDel_NotBizPlan
       , Mailer.labelAdd_BizPlan
-      
+
 
       , Ticketor.create
       , Ticketor.process
       , Mailer.trashBizplan
-      
+
       , Bizplaner.cinderella
       , Ticketor.noteCinderella
     )
@@ -335,16 +320,16 @@ function MailBot() {
     return bpZixiaChannel.done(Tracker.logOnEnd)
 
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   /******************************************************
   *
   *
@@ -355,7 +340,7 @@ function MailBot() {
   *
   */
   function doZixiaChannel() {
-    
+
     var zixiaChannel = new GmailChannel({
       name: 'zixia'
       , keywords: []
@@ -368,7 +353,7 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-    
+
     zixiaChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_NotBizPlan
@@ -381,26 +366,26 @@ function MailBot() {
 
       , Mailer.labelDel_NotBizPlan
       , Mailer.labelAdd_BizPlan
-      
+
       , Ticketor.create
       , Ticketor.process
-      , Mailer.forwardBizplan          
+      , Mailer.forwardBizplan
       , Mailer.trashBizplan
     )
-    
+
     return zixiaChannel.done(Tracker.logOnEnd)
-    
-  } 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+  }
+
+
+
+
+
+
+
+
+
+
   /******************************************************
   *
   *
@@ -411,7 +396,7 @@ function MailBot() {
   *
   */
   function doFormChannel() {
-    
+
     var formChannel = new GmailChannel({
       name: 'form'
       , keywords: [
@@ -426,15 +411,15 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-     
+
     formChannel.use(
       Tracker.logOnStart
 
       , Mailer.labelAdd_BizPlan
-      
+
       , Bizplaner.init
       , Parser.jsform
-      
+
       , Ticketor.tryToPair
       , Ticketor.noteOrCreate
 
@@ -444,20 +429,20 @@ function MailBot() {
       , Mailer.labelAdd_ToBeDeleted
       , Mailer.moveToArchive
     )
-    
+
     return formChannel.done(Tracker.logOnEnd)
-    
-  }   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+  }
+
+
+
+
+
+
+
+
+
+
   /******************************************************
   *
   *
@@ -468,7 +453,7 @@ function MailBot() {
   *
   */
   function doApplyChannel() {
-        
+
     var applyChannel = new GmailChannel({
       name: 'apply'
       , keywords: [ 'PreAngel创始人申请表' ]
@@ -479,16 +464,16 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-    
+
     log(log.DEBUG, applyChannel.getName() + ' QUERY_STRING: [' + applyChannel.getQueryString() + ']')
-    
+
     applyChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_BizPlan
 
       , Bizplaner.init
       , Parser.mikecrm
-      
+
       , Ticketor.tryToPair
       , Ticketor.replyOrCreate
       , Ticketor.mediumPriority
@@ -496,21 +481,21 @@ function MailBot() {
       , Mailer.markRead
       , Mailer.moveToArchive
     )
-    
+
     return applyChannel.done(Tracker.logOnEnd)
-    
-  }   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+  }
+
+
+
+
+
+
+
+
+
+
+
   /******************************************************
   *
   *
@@ -521,43 +506,43 @@ function MailBot() {
   *
   */
   function doIntviuChannel() {
-        
+
     var intviuChannel = new GmailChannel({
       name: 'intviu'
       , keywords: [ '您发布的职位已有面试视频上传' ]
       , labels: [ '-trash' ]
       , dayspan: DAYSPAN
       , query: 'from:@intviu.cn to:(zixia OR bp)'
-      
+
       /**
       * Don't exclude thread out of channel after process.
-      * instead, we trash each message after process. 
+      * instead, we trash each message after process.
       * because maybe there'll be new message arrived in this thread when we are processing.
       */
-      , doneLabel: null 
+      , doneLabel: null
       , conversation: false
-      
+
       , limit: LIMIT
       , res: {}
     })
-        
+
     intviuChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_BizPlan
 
       , Bizplaner.init
       , Parser.intviu
-      
+
       , Ticketor.tryToPair
       , Ticketor.replyOrCreate
       , Ticketor.highPriority
 
       , Mailer.trashMessage
     )
-    
+
     return intviuChannel.done(Tracker.logOnEnd)
-    
-  }   
+
+  }
 
   /**
    *
@@ -570,32 +555,32 @@ function MailBot() {
       , labels: [ 'inbox', '-trash' ]
       , dayspan: DAYSPAN
       , query: 'to:bp@pnp.vc (NOT to:zixia)'
-      
+
       , doneLabel: 'OutOfPnPChannel'
-      
+
       , limit: LIMIT
       , res: {}
     })
-    
+
     pnpChannel.use(
       Tracker.logOnStart
       , Mailer.labelAdd_BizPlan
-      
+
       , Bizplaner.init
-      
+
       , Ticketor.tryToPair
       , Ticketor.noteOrCreate
       , Ticketor.groupPnp
 //      , Ticketor.assignChen
-      
+
       , Mailer.labelAdd_ToBeDeleted
       , Mailer.moveToArchive
     )
-    
+
     return pnpChannel.done(Tracker.logOnEnd)
-    
+
   }
-  
+
   /******************************************************
   *
   *
@@ -606,7 +591,7 @@ function MailBot() {
   *
   */
   function doReviewChannel() {
-    
+
     var reviewChannel = new GmailChannel({
       name: 'review'
       , keywords: [
@@ -619,27 +604,27 @@ function MailBot() {
       , limit: LIMIT
       , res: {}
     })
-    
+
     Logger.log(reviewChannel.getQueryString())
-     
+
     reviewChannel.use(
       Tracker.logOnStart
 
       , Mailer.labelAdd_BizPlan
-      
+
       , Bizplaner.init
       , Parser.review
-      
+
       , Ticketor.tryToPair
       , Ticketor.noteOrCreate
       , Ticketor.groupFollow
       , Ticketor.closeIfNew
-      
+
       , Mailer.labelAdd_ToBeDeleted
       , Mailer.moveToArchive
     )
-    
+
     return reviewChannel.done(Tracker.logOnEnd)
-    
-  }   
+
+  }
 }
