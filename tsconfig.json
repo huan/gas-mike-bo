@@ -1,0 +1,29 @@
+{
+  "extends": "@chatie/tsconfig",
+  "compilerOptions": {
+    "types": ["google-apps-script"],
+    "lib": ["esnext"],
+    "noLib": true,
+    "isolatedModules": true,
+    "noResolve": true,
+    "target": "ES2019",
+    "module": "None",
+    "resolveJsonModule": false,
+    "noImplicitUseStrict": true,
+    "experimentalDecorators": true
+  },
+  "exclude": [
+    "node_modules/",
+    "dist/",
+    "tests/fixtures/",
+  ],
+  "include": [
+    "app/**/*.ts",
+    "bin/*.ts",
+    "bot/**/*.ts",
+    "examples/**/*.ts",
+    "scripts/**/*.ts",
+    "src/**/*.ts",
+    "tests/**/*.spec.ts",
+  ],
+}
