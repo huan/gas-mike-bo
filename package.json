@@ -4,6 +4,8 @@
   "description": "Mike BO in Google Apps Script, powered by clasp",
   "main": "index.js",
   "scripts": {
+    "push": "clasp push",
+    "pull": "clasp pull",
     "test": "echo test"
   },
   "repository": {
