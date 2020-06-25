@@ -1,63 +1,162 @@
-var GasContact = (function() {
-  'use strict'
+const CONTACT_SHEET_NAME = 'Contacts'
+let EMAILS: string[] = []
 
-  var CONTACT_SHEET_NAME = 'Contacts'
+class GasContact {
 
-  let EMAILS = []
+  /**
+   *
+   * get all contacts from google, then save emails to a sheet cache.
+   * run weekly is enough.
+   *
+   */
+  static reloadContacts () {
+    /**
+    *
+    * 1. Load contacts from google contact. (very slow, for minutes.)
+    *
+    */
+    log(log.DEBUG, 'Start loading contacts...')
 
-  var STATIC_METHODS = {
-      reloadContacts:   reloadContacts
-    , getEmailName:     getEmailName
-    , getEmailAddress:  getEmailAddress
-    , isBeijingMobile:  isBeijingMobile
-    , isMyContact:      isMyContact
-    , mobileToLocation: mobileToLocation
+    var contacts = ContactsApp
+      .getContactGroup('System Group: My Contacts')
+      .getContacts()
 
-    , companyToId: companyToId
-    // for test
-    , binary: binary
+    log(log.DEBUG, 'Contacts loaded.')
+
+    /**
+    *
+    * 2. Translate google contacts to a ranged array
+    *
+    */
+    const values: string[][] = []
+
+    contacts.forEach(function (c) {
+      const emails = c.getEmails()
+
+      if (!emails.length) return
+
+      emails.forEach(function (e) {
+        values.push([e.getAddress()])
+      })
+    })
+    log(log.DEBUG, 'Email address loaded.')
+
+    /**
+    *
+    * 3. Save emails to a sheet, for fast load in the future use
+    *
+    */
+    const contactSheet = getSheet(CONTACT_SHEET_NAME)
+    contactSheet.clear()
+
+    var range = contactSheet.getRange(1, 1, values.length, 1)
+
+    range.setValues(values)
+
+    var remainingDailyQuota = MailApp.getRemainingDailyQuota()
+
+    log(log.NOTICE, 'GasContact reload: contacts: %s , emails: %s , mail quota left: %s .', contacts.length, values.length, remainingDailyQuota)
+
   }
 
-  var GasContact = function () {
-    INSTANCE_METHODS = {
+  static getEmailName (email?: string) {
+
+    if (!email) return null
+
+    if (/,/.test(email)) {
+      return email.split(/,/).map(e => {
+        return this.getEmailName(e)
+      })
     }
 
-    var vm = {}
+    var name = email
+      .replace(/[^<\s]+@[^>\s]+/, '')
+      .replace(/[<>]/g, '')
+      .replace(/"/g, '')
+      .replace(/^\s*/, '')
+      .replace(/\s*$/, '')
 
-    // export static method on Instance
-    Object.keys(STATIC_METHODS)  .forEach(function (k) { vm[k] = STATIC_METHODS[k]   })
-    // export instance methods on Instance
-    Object.keys(INSTANCE_METHODS).forEach(function (k) { vm[k] = INSTANCE_METHODS[k] })
+    if (/@/.test(name)) {
+      name = name.replace(/@.+$/, '')
+    }
 
-    return vm
-
+    return name || email
   }
 
-  // export static methods on Class
-  Object.keys(STATIC_METHODS).forEach(function (k) { GasContact[k] = STATIC_METHODS[k] })
+  /**
+  *
+  * @param String emailString "Huan LI" <zixia@zixia.net>
+  *
+  * @return String|null zixia@zixia.net
+  *
+  */
+  static getEmailAddress (emailString: string | string[]) {
+    // Array
+    //    if (/,/.test(emailString)) {
+    if (Array.isArray(emailString)) {
+      return emailString.map(e => this.getEmailAddress(e))
+    }
 
-  return GasContact
+    const RE = /([^<\s]+@[^>\s]+)>?$/
+    const match = RE.exec(emailString)
 
+    let email
+    if (match) email = match[1]
 
-  /////////////////////////////////////////
+    /**
+    *
+    * XXX Freshdesk API v2 not permit email address that include a plus(+) sign
+    *
+    */
+    if (email) email = email.replace(/\+.+@/, '@')
 
+    return email
+  }
 
-  function isMyContact(email) {
+  static isBeijingMobile (mobile: string) {
+    const loc = this.mobileToLocation(mobile)
+    return loc && /北京/.test(loc)
 
-    email = getEmailAddress(email)
+    // var SEARCH_URL = 'https://tcc.taobao.com/cc/json/mobile_tel_segment.htm?tel='
+
+    // var TTL = 3
+    // var response = undefined
+    // var retCode = undefined
+
+    // while (!retCode && TTL--) {
+    // //      Logger.log('while loop ttl:'+TTL)
+    //   try {
+    //     response = UrlFetchApp.fetch(SEARCH_URL + mobile, {
+    //                                 muteHttpExceptions: true
+    //                                 })
+    //     retCode = response.getResponseCode()
+    //   } catch (e) {
+    //     log(log.ERR, 'UrlFetchApp.fetch exception: %s, %s', e.name, e.message)
+    //   }
+    // }
+
+    // if (retCode!=200) return false
+
+    // //    Logger.log(response.getContentText('GBK'))
+    // return /北京/.test(response.getContentText('GBK'))
+  }
+
+  static isMyContact (email: string) {
+
+    email = this.getEmailAddress(email)
 
     if (!email) return false
 
     if (!EMAILS.length) {
       const sheet = getSheet(CONTACT_SHEET_NAME)
 
-      var lastRow = sheet.getLastRow();
-      var emailRange = sheet.getRange(1,1,lastRow,1)
+      const lastRow = sheet.getLastRow()
+      const emailRange = sheet.getRange(1, 1, lastRow, 1)
 
       // time cost about 1 second for getValues
       const values = emailRange.getValues()
 
-      for (var i=0; i<values.length; i++) {
+      for (let i = 0; i < values.length; i++) {
         // very important for compare as string!
         var stringValue = values[i][0].toString()
         EMAILS.push(stringValue)
@@ -71,202 +170,32 @@ var GasContact = (function() {
     return index != -1
   }
 
-  function binary(list, value)
-  {
-    /**
-    *
-    * very important for compare as string!
-    * or we could got NaN , which is much trouble for comparing...
-    * https://stackoverflow.com/questions/34388974/
-    *
-    */
-    if ((typeof value)!='string') value = value.toString()
+  static mobileToLocation (mobile: string) {
 
-    var left = 0, right = list.length - 1, mid = 0
-    mid = Math.floor((left + right) / 2)
-    while( left < right && list[mid] != value )
-    {
-      if (list[mid] < value ) {
-        left = mid + 1
-      } else if( list[mid] > value ) {
-        right = mid - 1;
-      }
-      mid = Math.floor((left + right) / 2)
-    }
-    if( list[mid] == value ) return mid
-    return -1
-  }
+    const SEARCH_URL = 'http://apis.baidu.com/apistore/mobilenumber/mobilenumber?phone='
 
-  /**
-  *
-  * get all contacts from google, then save emails to a sheet cache.
-  * run weekly is enough.
-  *
-  */
-  function reloadContacts() {
+    let TTL = 3
+    let response
+    let retCode
 
-    /**
-    *
-    * 1. Load contacts from google contact. (very slow, for minutes.)
-    *
-    */
-    log(log.DEBUG, 'Start loading contacts...')
-
-    var contacts = ContactsApp
-    .getContactGroup('System Group: My Contacts')
-    .getContacts()
-
-    log(log.DEBUG, 'Contacts loaded.')
-
-    /**
-    *
-    * 2. Translate google contacts to a ranged array
-    *
-    */
-    var values = new Array()
-
-    contacts.forEach(function(c) {
-      emails = c.getEmails()
-
-      if (!emails.length) return
-
-      emails.forEach(function(e) {
-        values.push([e.getAddress()])
-      })
-        })
-    log(log.DEBUG, 'Email address loaded.')
-
-    /**
-    *
-    * 3. Save emails to a sheet, for fast load in the furture use
-    *
-    */
-    contactSheet = getSheet(CONTACT_SHEET_NAME)
-    contactSheet.clear()
-
-    var range = contactSheet.getRange(1,1, values.length, 1)
-
-    range.setValues(values)
-
-    var remainingDailyQuota = MailApp.getRemainingDailyQuota()
-
-    log(log.NOTICE, 'GasContact reload: contacts: %s , emails: %s , mail quota left: %s .', contacts.length, values.length, remainingDailyQuota)
-
-  }
-
-
-  /**
-  *
-  * @param String emailString "Zhuohuan LI" <zixia@zixia.net>
-  *
-  * @return String|null zixia@zixia.net
-  *
-  */
-  function getEmailAddress(emailString) {
-
-    // Array
-//    if (/,/.test(emailString)) {
-    if (emailString.map) {
-      return emailString.map(function (e) {
-        return getEmailAddress(e)
-      })
-    }
-
-    var RE = /([^<\s]+@[^>\s]+)>?$/
-    var match = RE.exec(emailString)
-
-    var email
-    if (match) email = match[1]
-
-    /**
-    *
-    * XXX Freshdesk API v2 not permit email address that include a plus(+) sign
-    *
-    */
-    if (email) email = email.replace(/\+.+@/, '@')
-
-    return email
-  }
-
-  function getEmailName(emailString) {
-
-    if (!emailString) return null
-
-    if (/,/.test(emailString)) {
-      return emailString.split(/,/).map(function (e) {
-        return getEmailName(e)
-      })
-    }
-
-    var name = emailString
-    .replace(/[^<\s]+@[^>\s]+/, '')
-    .replace(/[<>]/g, '')
-    .replace(/"/g, '')
-    .replace(/^\s*/, '')
-    .replace(/\s*$/, '')
-
-    if (/@/.test(name)) {
-      name = name.replace(/@.+$/, '')
-    }
-
-    return name ?
-      name : emailString
-  }
-
-  function isBeijingMobile(mobile) {
-
-    return /北京/.test(mobileToLocation(mobile))
-
-    var SEARCH_URL = 'https://tcc.taobao.com/cc/json/mobile_tel_segment.htm?tel='
-
-    var TTL = 3
-    var response = undefined
-    var retCode = undefined
-
-    while (!retCode && TTL--) {
-//      Logger.log('while loop ttl:'+TTL)
-      try {
-        response = UrlFetchApp.fetch(SEARCH_URL + mobile, {
-                                     muteHttpExceptions: true
-                                     })
-        retCode = response.getResponseCode()
-      } catch (e) {
-        log(log.ERR, 'UrlFetchApp.fetch exception: %s, %s', e.name, e.message)
-      }
-    }
-
-    if (retCode!=200) return false
-
-    //    Logger.log(response.getContentText('GBK'))
-    return /北京/.test(response.getContentText('GBK'))
-  }
-
-  function mobileToLocation(mobile) {
-
-    var SEARCH_URL = 'http://apis.baidu.com/apistore/mobilenumber/mobilenumber?phone='
-
-    var TTL = 3
-    var response = undefined
-    var retCode = undefined
-
-    var headers = {
-      apikey: '1cf55358456921fac91d19e886c04f8d'
+    const headers = {
+      apikey: '1cf55358456921fac91d19e886c04f8d',
     }
 
     while (!retCode && TTL--) {
       //      Logger.log('while loop ttl:'+TTL)
       try {
         response = UrlFetchApp.fetch(SEARCH_URL + mobile, {
-                                     muteHttpExceptions: true
-                                     , headers: headers
-                                     })
+          headers: headers,
+          muteHttpExceptions: true,
+        })
         retCode = response.getResponseCode()
       } catch (e) {
         log(log.ERR, 'UrlFetchApp.fetch exception: %s, %s', e.name, e.message)
       }
     }
 
-    if (retCode!=200) return false
+    if (retCode != 200) return false
 
     /**
     {
@@ -284,43 +213,43 @@ var GasContact = (function() {
     */
     var location = JSON.parse(response.getContentText())
 
-    if (0 === location.errNum) return location.retData.city + ', ' + location.retData.province
+    if (location.errNum === 0) return location.retData.city + ', ' + location.retData.province
 
     return false
   }
 
   /**
-  *
-  * Get registered shareholders from Goverment Office
-  *
-  */
-  function companyToId(name) {
+   *
+   * Get registered shareholders from Goverment Office
+   *
+   */
+  static companyToId (name) {
 
-    var SEARCHLIST_URL    = 'http://apis.baidu.com/bertadata/enterprise/searchlist?keyword='
-    var GETDETAILBUID_URL = 'http://apis.baidu.com/bertadata/enterprise/getdetailbyid?id='
+    const SEARCHLIST_URL    = 'http://apis.baidu.com/bertadata/enterprise/searchlist?keyword='
+    const GETDETAILBUID_URL = 'http://apis.baidu.com/bertadata/enterprise/getdetailbyid?id='
 
-    var TTL = 3
-    var response = undefined
-    var retCode = undefined
+    let TTL = 3
+    let response
+    let retCode
 
-    var headers = {
-      apikey: '1cf55358456921fac91d19e886c04f8d'
+    const headers = {
+      apikey: '1cf55358456921fac91d19e886c04f8d',
     }
 
     while (!retCode && TTL--) {
       //      Logger.log('while loop ttl:'+TTL)
       try {
         response = UrlFetchApp.fetch(SEARCHLIST_URL + name, {
-                                     muteHttpExceptions: true
-                                     , headers: headers
-                                     })
+          headers: headers,
+          muteHttpExceptions: true,
+        })
         retCode = response.getResponseCode()
       } catch (e) {
         log(log.ERR, 'UrlFetchApp.fetch exception: %s, %s', e.name, e.message)
       }
     }
 
-    if (retCode!=200) return false
+    if (retCode != 200) return false
 
     /**
     {
@@ -346,9 +275,9 @@ var GasContact = (function() {
       , status=200
     }
     */
-    var jsonStr = response.getContentText()
-//    Logger.log(jsonStr)
-    var list = JSON.parse(jsonStr)
+    let jsonStr = response.getContentText()
+    // Logger.log(jsonStr)
+    const list = JSON.parse(jsonStr)
 
     if (!list || !list.data || !list.data.items) return null
 
@@ -372,18 +301,18 @@ var GasContact = (function() {
       //      Logger.log('while loop ttl:'+TTL)
       try {
         response = UrlFetchApp.fetch(GETDETAILBUID_URL + id, {
-                                     muteHttpExceptions: true
-                                     , headers: headers
-                                     })
+          headers: headers,
+          muteHttpExceptions: true,
+        })
         retCode = response.getResponseCode()
       } catch (e) {
         log(log.ERR, 'UrlFetchApp.fetch exception: %s, %s', e.name, e.message)
       }
     }
 
-    if (retCode!=200) return false
+    if (retCode !== 200) return false
 
-    var jsonStr = response.getContentText()
+    jsonStr = response.getContentText()
     var theCompany = JSON.parse(jsonStr)
     Logger.log(jsonStr)
     /**
@@ -467,66 +396,41 @@ var GasContact = (function() {
     return theCompany.data.partners.map(function (p) {
       return p.name
     })
-
-
-
-    var changeRecords = theCompany.data.changerecords
-//    var partners = theCompany.data.partners
-////    Logger.log(changeRecords)
-//    var partnerNames = partners.map(function (p) {
-//      return p.name
-//    })
-
-
-    var partnerCapital = {}
-    if (/自然人独资/.test(theCompany.data.econ_kind)) {
-      var operName = theCompany.data.oper_name
-      partnerCapital[operName] = theCompany.data.regist_capi
-    } else {
-      changeRecords = changeRecords.filter(function (r) {
-        if (/出资额/.test(r.change_item))      return true;
-        else if (/投资人/.test(r.change_item)) return true;
-        else                                   return false;
-      })
-
-      if (!changeRecords) return null
-
-      changeRecords = changeRecords.sort(function (v1, v2) {
-        // 距离现在进的日期排在前面
-        return (new Date(v1.change_date)) < (new Date(v2.change_date))
-      })
-
-      var afterContent = changeRecords[0].after_content
-      var match
-      while (match = /\d+ +([^ ]+) +(\d+)?/g.exec(afterContent)) {
-        // 有限责任公司："1 李卓桓 94 自然人股东 \r\n2 李曼利 6 自然人股东 \r\n"
-        // 有限合伙： 1 李卓桓 自然人股东 \r\n2 林一仲 自然人股东 \r\n3 戴书文 自然人股东 \r\n
-        partnerCapital[match[1]] = match[2] || ''
-      }
-    }
-//    Logger.log(partnerCapital)
-
-//    var totalCapital = Object.keys(partnerCapital)
-//    .map(function (k) { return partnerCapital[k] })
-//    .reduce(function (v1, v2) { return v1 + v2 }, 0)
-//
-//    for (var i=0; i < partnerCapital.length; i++) {
-//      partnerCapital[i] = partnerCapital[i] / totalCapital
-//    }
-//
-//    if (0 === location.errNum) return location.retData.city + ', ' + location.retData.province
-
-    return partnerCapital
   }
 
-}())
-
-function testGasContact() {
-  Logger.log('start')
-//  Logger.log(GasContact.companyToId('北京阿卡科技有限公司'))
-//  Logger.log(GasContact.companyToId('北京阿卡信息技术有限公司'))
-  Logger.log(GasContact.companyToId('北京顺付投资管理中心（有限合伙）'))
-//  Logger.log(GasContact.companyToId('北京顺付科技有限公司'))
-//  Logger.log(GasContact.companyToId('青岛奥德莱三维打印有限公司'))
-//  Logger.log(GasContact.companyToId('北京金慧丰投资管理有限公司'))
 }
+
+function binary (list, value) {
+  /**
+  * very important for compare as string!
+  * or we could got NaN , which is much trouble for comparing...
+  * https://stackoverflow.com/questions/34388974/
+  *
+  */
+  if ((typeof value) !== 'string') value = value.toString()
+
+  var left = 0, right = list.length - 1, mid = 0
+  mid = Math.floor((left + right) / 2)
+  while (left < right && list[mid] != value) {
+    if (list[mid] < value) {
+      left = mid + 1
+    } else if (list[mid] > value) {
+      right = mid - 1
+    }
+    mid = Math.floor((left + right) / 2)
+  }
+  if (list[mid] == value) return mid
+  return -1
+}
+
+function testGasContact () {
+  Logger.log('start')
+  // Logger.log(GasContact.companyToId('北京阿卡科技有限公司'))
+  // Logger.log(GasContact.companyToId('北京阿卡信息技术有限公司'))
+  Logger.log(GasContact.companyToId('北京顺付投资管理中心（有限合伙）'))
+  // Logger.log(GasContact.companyToId('北京顺付科技有限公司'))
+  // Logger.log(GasContact.companyToId('青岛奥德莱三维打印有限公司'))
+  // Logger.log(GasContact.companyToId('北京金慧丰投资管理有限公司'))
+}
+
+export { GasContact }

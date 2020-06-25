@@ -127,7 +127,7 @@ class Mailer {
   static labelDel_Bug (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.BugBo));       next() }
 
   static labelAdd_BizPlan (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.BizPlan));     next() }
-  static labelAdd_ToBeDelete (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.ToBeDeleted)); next() }
+  static labelAdd_ToBeDeleted (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.ToBeDeleted)); next() }
 
   /**
    *
@@ -247,3 +247,5 @@ function forwardToZixiaBpGroup (message: GoogleAppsScript.Gmail.GmailMessage) {
   // FIXME(huan) fwdMessage might not initialized
   return fwdMessage!
 }
+
+export { Mailer }

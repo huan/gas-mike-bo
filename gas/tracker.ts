@@ -60,3 +60,5 @@ class Tracker {
   }
 
 }
+
+export { Tracker }
