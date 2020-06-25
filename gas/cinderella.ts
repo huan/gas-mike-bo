@@ -1,35 +1,15 @@
-var Cinderella = (function () {
-  'use strict'
+class Cinderella {
 
-  var VERSION = '0.1.0'
+  static ENDPOINT = 'http://106.186.29.141:8838/Cinderella/GetInfo'
 
-//  var ENDPOINT = 'http://111.207.243.70:8838/Cinderella/GetInfo'
-
-  // HK proxy
-  // $ sudo apt-get update && sudo apt-get install socat
-  // $ socat TCP-LISTEN:8088,fork TCP:111.207.243.70:8088
-  var ENDPOINT = 'http://106.186.29.141:8838/Cinderella/GetInfo'
-//  ENDPOINT = 'http://119.28.15.194:3333/Cinderella/GetInfo'
-
-  var Cinderella = function () {
-  }
-
-  Cinderella.query = query
-
-
-  return Cinderella
-
-
-  ///////////////////////////////////////////////////////////
-
-  function query(options) {
+  static query (options) {
     var payload = {
-      sender: options.from || 'zixia@zixia.net'
-      , receiver: options.to || 'bupt@bupt.edu'
-      , sendtime: getSendTime()
-      , subject: options.subject || '测试demo'
-      , body: options.body || '快塞给我一封邮件吧！'
-
+      body     : options.body || '快塞给我一封邮件吧！',
+      receiver : options.to || 'bupt@bupt.edu',
+      sender   : options.from || 'zixia@zixia.net',
+      sendtime : getSendTime(),
+      subject  : options.subject || '测试demo',
+      uploadFiles: undefined,
       // bug compatible
       // , uploadFiles: Utilities.newBlob('TEST DATA1').setName('test-data1.dat') // XXX bug compatible
     }
@@ -48,19 +28,18 @@ var Cinderella = (function () {
     var headers = {
     }
 
-    var options = {
-      muteHttpExceptions: true
-      , method : "post"
-      , headers: headers
-      , payload : payload
+    options = {
+      muteHttpExceptions: true,
+      method : "post",
+      headers: headers,
+      payload : payload,
     }
 
     var retObj = {}
 
     try {
-      var resp = UrlFetchApp.fetch(ENDPOINT, options)
+      var resp = UrlFetchApp.fetch(this.ENDPOINT, options)
       var code = resp.getResponseCode()
-
 
       switch (true) {
         case /^2/.test(code):
@@ -78,48 +57,47 @@ var Cinderella = (function () {
       retObj.description = e.message
     }
 
-    // DEBUG START
-//    if (payload.uploadFiles) {
-//      payload.uploadFiles = payload.uploadFiles.map(function(f) {
-//        return f.getName() + ':' + f.getContentType()
-//      })
-//    }
+    //   DEBUG START
+    // if (payload.uploadFiles) {
+    //   payload.uploadFiles = payload.uploadFiles.map(function(f) {
+    //     return f.getName() + ':' + f.getContentType()
+    //   })
+    // }
 
     payload.body = ''
     payload.uploadFiles = ''
     var testObj = {
-      retObj: retObj
-      , payload: payload
-     }
+      payload: payload,
+      retObj: retObj,
+    }
 
-     return testObj
-
-     // DEBUG END
-
-     return retObj
+    return testObj
   }
 
-  function getSendTime() {
-    var date = new Date()
+}
 
-    var year = date.getFullYear()
-    var month = date.getMonth() + 1
-    var day = date.getDate()
-    var hour = date.getHours()
-    var minute = date.getMinutes()
+function getSendTime () {
+  var date = new Date()
 
-    var sendtime = year + '-' + month + '-' + day + ' ' + hour + ':' + minute
-//    Logger.log(sendtime)
-    return sendtime
-  }
-}())
+  var year = date.getFullYear()
+  var month = date.getMonth() + 1
+  var day = date.getDate()
+  var hour = date.getHours()
+  var minute = date.getMinutes()
 
-function testCinderella() {
+  var sendtime = year + '-' + month + '-' + day + ' ' + hour + ':' + minute
+  // Logger.log(sendtime)
+  return sendtime
+}
+
+function testCinderella () {
   var file = Utilities.newBlob('TEST DATA1 北京 融资 项目 一百万 10%').setName('北京阿卡科技有限公司-大宝贝商业计划书')
-//  file.getSize = function() { return '345' }
+  // file.getSize = function() { return '345' }
 
   Logger.log(JSON.stringify(Cinderella.query({
-    attachments: [file]
+    attachments: [file],
   })))
 
 }
+
+export { Cinderella }
