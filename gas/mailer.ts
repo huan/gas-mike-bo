@@ -1,134 +1,27 @@
-var Mailer = (function () {
-  'use strict'
+/* eslint-disable camelcase */
+const LABELS = {
+  BUSY        : 'Mike/BUSY',
+  BizPlan     : 'BizPlan',
+  BugBo       : 'Mike/BugBo',
+  MikeBo      : 'Mike/MikeBo',
+  NotBizPlan  : 'NotBizPlan',
+  ToBeDeleted : 'ToBeDeleted',
+}
 
-  var VERSION = '0.1.0'
+class Mailer {
 
-  var LABELS = {
-    BizPlan:       'BizPlan'
-    , NotBizPlan:  'NotBizPlan'
-    , MikeBo:      'Mike/MikeBo'
-    , BugBo:       'Mike/BugBo'
-    , ToBeDeleted: 'ToBeDeleted'
+  static replySubmitGuideIfMailToBpAddress (req, res, next) {
 
-    , BUSY:        'Mike/BUSY'
-  }
+    const messages: GoogleAppsScript.Gmail.GmailMessage[] = req.getThread().getMessages()
 
+    const froms = messages
+      .map(function (m) { return m.getFrom() })
+      .join(',')
 
-  return {
+    const message = messages[0]
+    const to = message.getTo()
 
-
-    replySubmitGuideIfMailToBpAddress: replySubmitGuideIfMailToBpAddress
-
-    , trashBizplan:          trashBizplan
-    , forwardBizplan:        forwardBizplan
-
-    , skipFromMyContacts:    skipFromMyContacts
-    , skipFromInvalidSender: skipFromInvalidSender
-
-
-    /**
-    *
-    * LABELS
-    *
-    */
-    , labelAdd_Busy:        function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.BUSY));        next() }
-    , labelDel_Busy:        function (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.BUSY));        next() }
-
-    , labelAdd_NotBizPlan:  function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.NotBizPlan));  next() }
-    , labelDel_NotBizPlan:  function (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.NotBizPlan));  next() }
-
-    , labelAdd_Mike:        function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.MikeBo));      next() }
-    , labelDel_Mike:        function (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.MikeBo));      next() }
-
-    , labelAdd_Bug:         function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.BugBo));       next() }
-    , labelDel_Bug:         function (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.BugBo));       next() }
-
-    , labelAdd_BizPlan:     function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.BizPlan));     next() }
-    , labelAdd_ToBeDeleted: function (req, res, next) { req.getThread().addLabel   (GmailApp.getUserLabelByName(LABELS.ToBeDeleted)); next() }
-
-    /**
-    *
-    * Archive
-    *
-    */
-    , moveToArchive: function (req, res, next) { req.getThread().moveToArchive(); next() }
-    , trashMessage:  function (req, res, next) { req.getMessage().moveToTrash(); next() }
-    , markRead:      function (req, res, next) { req.getThread().markRead(); next() }
-
-    /**
-    *
-    * Utilities
-    *
-    */
-    , isAllLabelsExist: isAllLabelsExist
-  }
-
-  //
-  // All Done.
-  //
-  ////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-  /**
-  * Trash a bizplan thread.
-  * do not keep bp in gmail
-  * use a for loop is because: sometimes entrepreneur send their email more than one times.
-  */
-  function trashBizplan(req, res, next) {
-    var messages = req.getThread().getMessages()
-    var report = 'trashed message: '
-    for (var i=0; i<messages.length; i++) {
-      if (messages[i].getFrom() != messages[0].getFrom()) break
-      // then the following message(i) is as the same sender as the first one
-      messages[i].moveToTrash()
-      report += i + ', '
-    }
-    return next(report)
-  }
-
-  /**
-  *
-  * Do not touch mail from people I known
-  *
-  */
-  function skipFromMyContacts(req, res, next) {
-    var firstMessage = req.getThread().getMessages()[0]
-
-    var from = firstMessage.getReplyTo() || firstMessage.getFrom()
-
-    if (GasContact.isMyContact(from)) {
-      return req.pushError('skipped my contact:' + from)
-    }
-    return next()
-  }
-
-  function skipFromInvalidSender(req, res, next) {
-    var message = req.getMessage()
-    var from = message.getReplyTo() || message.getFrom()
-
-    var email = GasContact.getEmailName(from)
-
-    if (!email) return req.pushError('skipped empty mail from:' + from)
-    else        return next()
-  }
-
-  function replySubmitGuideIfMailToBpAddress(req, res, next) {
-
-    var messages = req.getThread().getMessages()
-
-    var froms = messages
-    .map(function (m) { return m.getFrom() })
-    .join(',')
-
-    var message = messages[0]
-    var to = message.getTo()
-
-    var RE = /bp@pre/i
+    const RE = /bp@pre/i
 
     // 1. 不是发给  bp@pre... 的
     if (!RE.test(to))   return next('no guide sent coz not /^bp@pre/i') // 1. 不是发给  bp@pre... 的
@@ -141,20 +34,37 @@ var Mailer = (function () {
     return next('submit guide sent')
   }
 
-  /*********************************************
-  *
-  *
-  *
+  /**
+  * Trash a bizplan thread.
+  * do not keep bp in gmail
+  * use a for loop is because: sometimes entrepreneur send their email more than one times.
   */
-  function forwardBizplan(req, res, next) {
+  static trashBizplan (req, res, next) {
+    const messages = req.getThread().getMessages()
+    let report = 'trashed message: '
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].getFrom() !== messages[0].getFrom()) break
+      // then the following message(i) is as the same sender as the first one
+      messages[i].moveToTrash()
+      report += i + ', '
+    }
+    return next(report)
+  }
 
-    var messages = req.getThread().getMessages()
+  /*********************************************
+   *
+   *
+   *
+   */
+  static forwardBizplan (req, res, next) {
+
+    const messages = req.getThread().getMessages()
 
     /**
     *
     * 3. Forward BizPlan email to zixia-bp@googlegroups.com (if not do it before)
     *
-    * 1. bp send to 'bp@...'had alread been sent to zixia-bp@googlegroups.com, by gmail filter
+    * 1. bp send to 'bp@...'had already been sent to zixia-bp@googlegroups.com, by gmail filter
     * 2. bp not sent to 'bp@xxx' should be forward here.
     *
     */
@@ -173,105 +83,71 @@ var Mailer = (function () {
     return next()
   }
 
+  /**
+   *
+   * Do not touch mail from people I known
+   *
+   */
+  static skipFromMyContacts (req, res, next) {
+    let firstMessage = req.getThread().getMessages()[0]
 
+    let from = firstMessage.getReplyTo() || firstMessage.getFrom()
 
-  ///////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////
-  //
-  // The Following are Helper Functions, not Middle Ware
-  //
-  ///////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////
-
-
-
-  /***
-  *
-  * Helper 2 - Reply BP
-  *
-  */
-  function replySubmitGuide(message) {
-    var from = message.getFrom()
-    var name = GasContact.getEmailName(from)
-
-    var t = HtmlService.createTemplateFromFile('templates/auto_reply')
-    t.name = name
-    var htmlReply = t.evaluate().getContent()
-
-    var htmlBody = htmlReply + '<blockquote>' + message.getBody() + '</blockquote>'
-
-    message.reply(null, {
-      from: 'bp@pre-angel.com'
-      , name: 'Huan LI (李卓桓)'
-      , htmlBody: htmlBody
-    })
+    if (GasContact.isMyContact(from)) {
+      return req.pushError('skipped my contact:' + from)
+    }
+    return next()
   }
 
+  static skipFromInvalidSender (req, res, next) {
+    let message = req.getMessage()
+    let from = message.getReplyTo() || message.getFrom()
 
-  function forwardToZixiaBpGroup(message) {
-    /*
-    * Get size(in bytes) of all attachments
-    */
-    var totalSize = 0
-    var attachments = message.getAttachments()
-    for (var i = 0; i < attachments.length; i++) {
-      totalSize += message.getAttachments()[i].getSize()
-    }
-    var eightMegaByte = 8 * 1024 * 1024
+    let email = GasContact.getEmailName(from)
 
-    if (totalSize > eightMegaByte) {
-      log(log.INFO, 'attachment size: %s, > 8MB(%s), skip forward.', totalSize, eightMegaByte)
-      return null
-    }
-
-    var ZIXIABPGROUP = 'zixia-bp@googlegroups.com'
-
-    message.forward(ZIXIABPGROUP, {
-      from: 'zixia@zixia.net'
-    })
-
-    var fwdMessage
-
-    var ttl = 7
-    while (ttl-- > 0) {
-      /**
-      *
-      * GmailApp.refreshThread(thread)
-      * not work!??? (20160122 failed again)
-      *
-      * must use GmailApp getThread, to force reload
-      *
-      */
-      var threadId = message.getThread().getId()
-      var thread = GmailApp.getThreadById(threadId)
-
-      log(log.DEBUG, 'forward ttl:%s, message num:%s', ttl, thread.getMessages().length)
-
-      var messages = thread.getMessages()
-      .filter(function(m) {
-        var isFwd = !m.isInTrash() && 'zixia@zixia.net' == m.getFrom() && ZIXIABPGROUP == m.getTo()
-        return isFwd
-      })
-
-      if (messages.length > 0) {
-        fwdMessage = messages[0]
-        break
-      }
-      Utilities.sleep(1000)
-    }
-
-    if (ttl <= 0) {
-      throw Error('forwarded email ttl timeout.')
-    }
-
-    return fwdMessage
+    if (!email) return req.pushError('skipped empty mail from:' + from)
+    else        return next()
   }
 
-  function isAllLabelsExist() {
-    var ok = true
+  /**
+   *
+   * LABELS
+   *
+   */
+  static labelAdd_Busy (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.BUSY));        next() }
+  static labelDel_Busy (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.BUSY));        next() }
+
+  static labelAdd_NotBizPlan (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.NotBizPlan));  next() }
+  static labelDel_NotBizPlan (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.NotBizPlan));  next() }
+
+  static labelAdd_Mike (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.MikeBo));      next() }
+  static labelDel_Mike (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.MikeBo));      next() }
+
+  static labelAdd_Bug (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.BugBo));       next() }
+  static labelDel_Bug (req, res, next) { req.getThread().removeLabel(GmailApp.getUserLabelByName(LABELS.BugBo));       next() }
+
+  static labelAdd_BizPlan (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.BizPlan));     next() }
+  static labelAdd_ToBeDelete (req, res, next) { req.getThread().addLabel(GmailApp.getUserLabelByName(LABELS.ToBeDeleted)); next() }
+
+  /**
+   *
+   * Archive
+   *
+   */
+  static moveToArchive (req, res, next) { req.getThread().moveToArchive(); next() }
+  static trashMessage (req, res, next) { req.getMessage().moveToTrash(); next() }
+  static markRead (req, res, next) { req.getThread().markRead(); next() }
+
+  /**
+   *
+   * Utilities
+   *
+   */
+  static isAllLabelsExist () {
+    const ok = true
     try {
       Object.keys(LABELS).forEach(function (k) {
-        var label = LABELS[k]
+        const label = LABELS[k as keyof typeof LABELS]
         if (!GmailApp.getUserLabelByName(label)) throw new Error('label ' + label + ' not exist')
       })
     } catch (e) {
@@ -281,8 +157,93 @@ var Mailer = (function () {
     return ok
   }
 
-}())
+}
 
-function testMailer() {
-  Logger.log(Mailer.isAllLabelsExist())
+//
+// The Following are Helper Functions, not Middle Ware
+//
+
+/***
+*
+* Helper 2 - Reply BP
+*
+*/
+function replySubmitGuide (message: GoogleAppsScript.Gmail.GmailMessage) {
+  const from = message.getFrom()
+  const name = GasContact.getEmailName(from)
+
+  const t = HtmlService.createTemplateFromFile('templates/auto_reply')
+  t.name = name
+  const htmlReply = t.evaluate().getContent()
+
+  const htmlBody = htmlReply + '<blockquote>' + message.getBody() + '</blockquote>'
+
+  message.reply(htmlBody, {
+    from: 'bp@pre-angel.com',
+    htmlBody: htmlBody,
+    name: 'Huan LI (李卓桓)',
+  })
+}
+
+function forwardToZixiaBpGroup (message: GoogleAppsScript.Gmail.GmailMessage) {
+  /*
+  * Get size(in bytes) of all attachments
+  */
+  let totalSize = 0
+  const attachments = message.getAttachments()
+  for (var i = 0; i < attachments.length; i++) {
+    totalSize += message.getAttachments()[i].getSize()
+  }
+  var eightMegaByte = 8 * 1024 * 1024
+
+  if (totalSize > eightMegaByte) {
+    log(log.INFO, 'attachment size: %s, > 8MB(%s), skip forward.', totalSize, eightMegaByte)
+    return null
+  }
+
+  const ZIXIA_BP_GROUP = 'zixia-bp@googlegroups.com'
+
+  message.forward(ZIXIA_BP_GROUP, {
+    from: 'zixia@zixia.net',
+  })
+
+  let fwdMessage: GoogleAppsScript.Gmail.GmailMessage
+
+  let ttl = 7
+  while (ttl-- > 0) {
+    /**
+    *
+    * GmailApp.refreshThread(thread)
+    * not work!??? (20160122 failed again)
+    *
+    * must use GmailApp getThread, to force reload
+    *
+    */
+    const threadId = message.getThread().getId()
+    const thread = GmailApp.getThreadById(threadId)
+
+    log(log.DEBUG, 'forward ttl:%s, message num:%s', ttl, thread.getMessages().length)
+
+    const isNotTrash = (m: GoogleAppsScript.Gmail.GmailMessage) => !m.isInTrash()
+    const isFromZixia = (m: GoogleAppsScript.Gmail.GmailMessage) => m.getFrom() === 'zixia@zixia.net'
+    const isToBpGroup = (m: GoogleAppsScript.Gmail.GmailMessage) => m.getTo() === ZIXIA_BP_GROUP
+
+    const messages = thread.getMessages()
+      .filter(isNotTrash)
+      .filter(isFromZixia)
+      .filter(isToBpGroup)
+
+    if (messages.length > 0) {
+      fwdMessage = messages[0]
+      break
+    }
+    Utilities.sleep(1000)
+  }
+
+  if (ttl <= 0) {
+    throw Error('forwarded email ttl timeout.')
+  }
+
+  // FIXME(huan) fwdMessage might not initialized
+  return fwdMessage!
 }
