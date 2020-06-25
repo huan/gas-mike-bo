@@ -1,3 +1,5 @@
+import { Freshdesk } from './gas-freshdesk/freshdesk'
+
 var Ticketor = (function () {
   'use strict'
 
@@ -23,15 +25,20 @@ var Ticketor = (function () {
   //     eval(CODE)
   //   }
   // } // Class Freshdesk is ready for use now!
-  const GasFreshdesk = getGasFreshdesk()
+  // const GasFreshdesk = getGasFreshdesk()
 
   var FRESHDESK_URL = PropertiesService.getScriptProperties().getProperty('FreshdeskDomainUrl')
   var FRESHDESK_KEY = PropertiesService.getScriptProperties().getProperty('FreshdeskApiKey')
 
-  var MyFreshdesk = new GasFreshdesk(FRESHDESK_URL, FRESHDESK_KEY)
-  var Ticket = MyFreshdesk.Ticket
-  var Contact = MyFreshdesk.Contact
-  var Agent = MyFreshdesk.Agent
+  if (!FRESHDESK_URL || !FRESHDESK_KEY) {
+    throw new Error('FRESHDESK_URL or FRESHDESK_KEY not found!')
+  }
+
+  const MyFreshdesk = new Freshdesk(FRESHDESK_URL, FRESHDESK_KEY)
+
+  const Ticket = MyFreshdesk.Ticket
+  const Contact = MyFreshdesk.Contact
+  const Agent = MyFreshdesk.Agent
 
   // hardcoded for cache
   var ID_AGENT_MARY = 5008844005
