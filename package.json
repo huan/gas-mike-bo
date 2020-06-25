@@ -1,0 +1,27 @@
+{
+  "name": "gas-mike-bo",
+  "version": "0.2.0",
+  "description": "Mike BO in Google Apps Script, powered by clasp",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huan/gas-mike-bo.git"
+  },
+  "keywords": [
+    "mike",
+    "gas",
+    "clasp"
+  ],
+  "author": "Huan LI <zixia@zixia.net>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/huan/gas-mike-bo/issues"
+  },
+  "homepage": "https://github.com/huan/gas-mike-bo#readme",
+  "dependencies": {
+    "@google/clasp": "^2.3.0"
+  }
+}
