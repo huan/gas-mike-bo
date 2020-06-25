@@ -8,21 +8,21 @@ var Ticketor = (function () {
   * 3. Freshdesk API
   *
   */
-//  if ((typeof GasFreshdesk)==='undefined') { // GasFreshdesk Initialization. (only if not initialized yet.)
-//    var TTL = 3
-//    var CODE = undefined
-//    while (!CODE && TTL-->0) {
-//      try {
-//        CODE = UrlFetchApp.fetch('https://raw.githubusercontent.com/zixia/gas-freshdesk/master/src/gas-freshdesk-lib.js').getContentText()
-//      } catch (e) {
-//        log(log.ERR, 'UrlFetchApp.fetch freshdesk lib exception(ttl:%s): %s', TTL, e.message)
-//        Utilities.sleep(1000)
-//      }
-//    }
-//    if (CODE) {
-//      eval(CODE)
-//    }
-//  } // Class Freshdesk is ready for use now!
+  // if ((typeof GasFreshdesk)==='undefined') { // GasFreshdesk Initialization. (only if not initialized yet.)
+  //   var TTL = 3
+  //   var CODE = undefined
+  //   while (!CODE && TTL-->0) {
+  //     try {
+  //       CODE = UrlFetchApp.fetch('https://raw.githubusercontent.com/zixia/gas-freshdesk/master/src/gas-freshdesk-lib.js').getContentText()
+  //     } catch (e) {
+  //       log(log.ERR, 'UrlFetchApp.fetch freshdesk lib exception(ttl:%s): %s', TTL, e.message)
+  //       Utilities.sleep(1000)
+  //     }
+  //   }
+  //   if (CODE) {
+  //     eval(CODE)
+  //   }
+  // } // Class Freshdesk is ready for use now!
   const GasFreshdesk = getGasFreshdesk()
 
   var FRESHDESK_URL = PropertiesService.getScriptProperties().getProperty('FreshdeskDomainUrl')
