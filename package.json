@@ -6,6 +6,7 @@
   "scripts": {
     "push": "clasp push",
     "pull": "clasp pull",
+    "open": "clasp open",
     "lint": "npm run lint:es && npm run lint:ts && npm run lint:md",
     "lint:es": "eslint --ignore-pattern tests/fixtures/ '{bin,examples,scripts,gas,tests}/**/*.ts'",
     "lint:md": "markdownlint README.md",
