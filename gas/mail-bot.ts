@@ -1,4 +1,4 @@
-import shuffleArray from 'shuffle-array'
+import { shuffleArray } from './utils/shuffle-array'
 
 import { Gas } from './gas'
 
@@ -108,33 +108,33 @@ function MailBot () {
     ]
 
     var bulkChannel = new GmailChannel({
-      name: 'bulk'
-      , keywords: []
-      , labels: [
-        'inbox'
-        , 'unread'
-        , '-' + 'ToBeDeleted'
-        , '-' + 'trash'
-      ]
-      , dayspan: DAYSPAN
-      , query: ['-(zixia OR huan '
-                , ' OR lizh OR lizhuohuan OR lzhuohuan OR zhuohuan '
-                , ' OR 卓桓 OR 李兄 OR 李卓桓 OR 卓恒 OR 李卓恒 OR 李总 OR 李老师 OR 李先生 '
-                , ' OR abu OR 阿布 OR bruce OR ceibsmobi.com OR akamobi.com OR chatie.io'
-                , ')'
+      name: 'bulk',
+      keywords: [],
+      labels: [
+        'inbox',
+        'unread',
+        '-' + 'ToBeDeleted',
+        '-' + 'trash',
+      ],
+      dayspan: DAYSPAN,
+      query: ['-(zixia OR huan ',
+        ' OR lizh OR lizhuohuan OR lzhuohuan OR zhuohuan ',
+        ' OR 卓桓 OR 李兄 OR 李卓桓 OR 卓恒 OR 李卓恒 OR 李总 OR 李老师 OR 李先生 ',
+        ' OR abu OR 阿布 OR bruce OR ceibsmobi.com OR akamobi.com OR chatie.io',
+        ')',
 
-                , '-is:important'
-                , '-17salsa'
-                , '-融资申请'
-                , '-最简单的创业计划书'
-                , '-PreAngel创始人申请表'
-               ].join(' ')
+        '-is:important',
+        '-17salsa',
+        '-融资申请',
+        '-最简单的创业计划书',
+        '-PreAngel创始人申请表',
+      ].join(' ')
       + ' -from:(' + whiteFromList.join(' OR ') + ')'
-      + ' -to:(' + whiteToList.join(' OR ') + ')'
+      + ' -to:(' + whiteToList.join(' OR ') + ')',
 
-      , doneLabel: 'OutOfBulkChannel'
-      , limit: LIMIT
-      , res: {}
+      doneLabel: 'OutOfBulkChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     bulkChannel.use(
@@ -176,18 +176,6 @@ function MailBot () {
 
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
   /******************************************************
   *
   *
@@ -197,21 +185,21 @@ function MailBot () {
   *
   *
   */
-  function doBpWithCipherChannel() {
+  function doBpWithCipherChannel () {
 
     // 1. to:bp with CIPHER
     var bpWithCipherChannel = new GmailChannel({
-      name: 'bpWithCipher'
-      , keywords: []
-      , labels: [ 'inbox', '-trash' ]
-      , dayspan: DAYSPAN
-      , query: ['(to:(bp@pre-angel.com OR bp@preangelpartners.com) NOT to:zixia)'
-                , '(abu OR 阿布 OR bruce OR zixia OR huan OR lizh OR lizhuohuan OR zhuohuan OR 卓桓 OR 李兄 OR 李卓桓 OR 卓恒 OR 李卓恒 OR 李总 OR 李老师 OR 李先生)'
-                , '("邮箱发来的超大附件" OR "邮箱发来的云附件" OR (filename:pptx OR filename:ppt OR filename:pdf OR filename:doc))'
-               ].join(' ')
-      , doneLabel: 'OutOfBpCipherChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'bpWithCipher',
+      keywords: [],
+      labels: [ 'inbox', '-trash' ],
+      dayspan: DAYSPAN,
+      query: ['(to:(bp@pre-angel.com OR bp@preangelpartners.com) NOT to:zixia)',
+        '(abu OR 阿布 OR bruce OR zixia OR huan OR lizh OR lizhuohuan OR zhuohuan OR 卓桓 OR 李兄 OR 李卓桓 OR 卓恒 OR 李卓恒 OR 李总 OR 李老师 OR 李先生)',
+        '("邮箱发来的超大附件" OR "邮箱发来的云附件" OR (filename:pptx OR filename:ppt OR filename:pdf OR filename:doc))',
+      ].join(' '),
+      doneLabel: 'OutOfBpCipherChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     bpWithCipherChannel.use(
@@ -226,7 +214,6 @@ function MailBot () {
 
       , Mailer.labelDel_NotBizPlan
       , Mailer.labelAdd_BizPlan
-
 
       , Ticketor.create
       , Ticketor.process
@@ -249,21 +236,21 @@ function MailBot () {
   *
   *
   */
-  function doBpZixiaChannel() {
+  function doBpZixiaChannel () {
 
     // 2. to:bp AND to:zixia
     var bpZixiaChannel = new GmailChannel({
-      name: 'bpZixia'
-      , keywords: []
-      , labels: [ 'inbox', '-trash' ]
-      , dayspan: DAYSPAN
-      , query: [ 'to:(huan@pre-angel.com OR zixia@pre-angel.com OR zixia@preangelpartners.com)'
-                , 'to:(bp@pre-angel.com OR bp@preangelpartners.com)'
-                , '(has:attachment OR "邮箱发来的超大附件" OR "邮箱发来的云附件")'
-               ].join(' ')
-      , doneLabel: 'OutOfBpZixiaChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'bpZixia',
+      keywords: [],
+      labels: [ 'inbox', '-trash' ],
+      dayspan: DAYSPAN,
+      query: [ 'to:(huan@pre-angel.com OR zixia@pre-angel.com OR zixia@preangelpartners.com)',
+        'to:(bp@pre-angel.com OR bp@preangelpartners.com)',
+        '(has:attachment OR "邮箱发来的超大附件" OR "邮箱发来的云附件")',
+      ].join(' '),
+      doneLabel: 'OutOfBpZixiaChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     bpZixiaChannel.use(
@@ -300,19 +287,19 @@ function MailBot () {
   *
   *
   */
-  function doZixiaChannel() {
+  function doZixiaChannel () {
 
     var zixiaChannel = new GmailChannel({
-      name: 'zixia'
-      , keywords: []
-      , labels: [ 'inbox', '-trash' ]
-      , dayspan: DAYSPAN
-      , query: [ '("邮箱发来的超大附件" OR "邮箱发来的云附件" OR (filename:pptx OR filename:ppt OR filename:pdf))'
-                , '(to:(huan@pre-angel.com OR zixia@pre-angel.com OR zixia@preangelpartners.com OR zixia@preangelfund.com) NOT to:(bp@pre-angel.com OR bp@preangelpartners.com))'
-               ].join(' ')
-      , doneLabel: 'OutOfZixiaChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'zixia',
+      keywords: [],
+      labels: [ 'inbox', '-trash' ],
+      dayspan: DAYSPAN,
+      query: [ '("邮箱发来的超大附件" OR "邮箱发来的云附件" OR (filename:pptx OR filename:ppt OR filename:pdf))',
+        '(to:(huan@pre-angel.com OR zixia@pre-angel.com OR zixia@preangelpartners.com OR zixia@preangelfund.com) NOT to:(bp@pre-angel.com OR bp@preangelpartners.com))',
+      ].join(' '),
+      doneLabel: 'OutOfZixiaChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     zixiaChannel.use(
@@ -347,21 +334,21 @@ function MailBot () {
   *
   *
   */
-  function doFormChannel() {
+  function doFormChannel () {
 
     var formChannel = new GmailChannel({
-      name: 'form'
-      , keywords: [
-        '融资申请'
-        , '最简单的创业计划书'
-        , '-abcdefghijklmnopqrstuvwxyz'
-      ]
-      , labels: ['-trash']
-      , dayspan: DAYSPAN
-      , query: 'to:bp'
-      , doneLabel: 'OutOfFormChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'form',
+      keywords: [
+        '融资申请',
+        '最简单的创业计划书',
+        '-abcdefghijklmnopqrstuvwxyz',
+      ],
+      labels: ['-trash'],
+      dayspan: DAYSPAN,
+      query: 'to:bp',
+      doneLabel: 'OutOfFormChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     formChannel.use(
@@ -395,17 +382,17 @@ function MailBot () {
   *
   *
   */
-  function doApplyChannel() {
+  function doApplyChannel () {
 
     var applyChannel = new GmailChannel({
-      name: 'apply'
-      , keywords: [ 'PreAngel创始人申请表' ]
-      , labels: [ '-trash' ]
-      , dayspan: DAYSPAN
-      , query: 'from:mikecrm.com to:(zixia OR bp)'
-      , doneLabel: 'OutOfApplyChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'apply',
+      keywords: [ 'PreAngel创始人申请表' ],
+      labels: [ '-trash' ],
+      dayspan: DAYSPAN,
+      query: 'from:mikecrm.com to:(zixia OR bp)',
+      doneLabel: 'OutOfApplyChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     log(log.DEBUG, applyChannel.getName() + ' QUERY_STRING: [' + applyChannel.getQueryString() + ']')
@@ -438,25 +425,25 @@ function MailBot () {
   *
   *
   */
-  function doIntviuChannel() {
+  function doIntviuChannel () {
 
     var intviuChannel = new GmailChannel({
-      name: 'intviu'
-      , keywords: [ '您发布的职位已有面试视频上传' ]
-      , labels: [ '-trash' ]
-      , dayspan: DAYSPAN
-      , query: 'from:@intviu.cn to:(zixia OR bp)'
+      name: 'intviu',
+      keywords: [ '您发布的职位已有面试视频上传' ],
+      labels: [ '-trash' ],
+      dayspan: DAYSPAN,
+      query: 'from:@intviu.cn to:(zixia OR bp)',
 
       /**
       * Don't exclude thread out of channel after process.
       * instead, we trash each message after process.
       * because maybe there'll be new message arrived in this thread when we are processing.
       */
-      , doneLabel: null
-      , conversation: false
+      doneLabel: null,
+      conversation: false,
 
-      , limit: LIMIT
-      , res: {}
+      limit: LIMIT,
+      res: {},
     })
 
     intviuChannel.use(
@@ -482,17 +469,17 @@ function MailBot () {
    * 7. Plug and Play Channel
    *
    */
-  function doPlugAndPlayChannel() {
+  function doPlugAndPlayChannel () {
     var pnpChannel = new GmailChannel({
-      name: 'PnP'
-      , labels: [ 'inbox', '-trash' ]
-      , dayspan: DAYSPAN
-      , query: 'to:bp@pnp.vc (NOT to:zixia)'
+      name: 'PnP',
+      labels: [ 'inbox', '-trash' ],
+      dayspan: DAYSPAN,
+      query: 'to:bp@pnp.vc (NOT to:zixia)',
 
-      , doneLabel: 'OutOfPnPChannel'
+      doneLabel: 'OutOfPnPChannel',
 
-      , limit: LIMIT
-      , res: {}
+      limit: LIMIT,
+      res: {},
     })
 
     pnpChannel.use(
@@ -523,19 +510,19 @@ function MailBot () {
   *
   *
   */
-  function doReviewChannel() {
+  function doReviewChannel () {
 
     var reviewChannel = new GmailChannel({
-      name: 'review'
-      , keywords: [
-        'PreAngel项目评估表'
-      ]
-      , labels: ['inbox', '-trash']
-      , dayspan: DAYSPAN
-      , query: 'to:bp AND from:表单大师'
-      , doneLabel: 'OutOfReviewChannel'
-      , limit: LIMIT
-      , res: {}
+      name: 'review',
+      keywords: [
+        'PreAngel项目评估表',
+      ],
+      labels: ['inbox', '-trash'],
+      dayspan: DAYSPAN,
+      query: 'to:bp AND from:表单大师',
+      doneLabel: 'OutOfReviewChannel',
+      limit: LIMIT,
+      res: {},
     })
 
     Logger.log(reviewChannel.getQueryString())

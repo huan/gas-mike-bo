@@ -28,11 +28,11 @@ class Http {
     return this.httpBackend('get', path)
   }
 
-  put (path: string, data) {
+  put (path: string, data: any) {
     return this.httpBackend('put', path, data)
   }
 
-  post (path: string, data) {
+  post (path: string, data: any) {
     return this.httpBackend('post', path, data)
   }
 
@@ -84,10 +84,12 @@ class Http {
 
     }
 
-    var options = {
-      headers: this.authHeader,
-      method: method,
-      muteHttpExceptions: true,
+    let options = {
+      contentType        : undefined as any,
+      headers            : this.authHeader,
+      method             : method,
+      muteHttpExceptions : true,
+      payload            : undefined as any,
     }
 
     switch (method.toLowerCase()) {
@@ -107,7 +109,7 @@ class Http {
     if (/^http/.test(path)) {
       var endpoint = path
     } else {
-      endpoint = URL + path
+      endpoint = this.url + path
     }
 
     /**
