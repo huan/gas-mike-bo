@@ -1,93 +1,74 @@
-function MailBot() {
-  'use strict'
+import shuffleArray from 'shuffle-array'
 
+import { Gas } from './gas'
+
+function MailBot () {
   // DAYSPAN: how many day(s) looks back by search
   var DAYSPAN = 7
   // LIMIT: how many message(s) processed by run once
   var LIMIT   = 7
 
-  if ((typeof log)==='undefined') eval ('var log = new GasLog()')
+  // eslint-disable-next-line no-eval
+  if ((typeof log) === 'undefined') eval('var log = new GasLog()')
 
   GmailApp.getAliases() // Require permission
   const GmailChannel = getGmailChannel()
 
   log(log.DEBUG, 'InboxCleaner starting...')
 
-
-  ////////////////////////////////////////////////////
+  /**********************************************/
   //
   // Development & Testing
   //
-//  return development()
-//  return doZixiaChannel()
+  // return development()
+  // return doZixiaChannel()
   //
-  ////////////////////////////////////////////////////
-
-
-  /////////////////////////////////////////////////////////////////////
-  //
-  // Start Cleaning
-
-  var numProcceed = 0
-
-  var tasks = [
-    doBulkChannel           // 0. 群发邮件，并且不是发到我的邮箱的
-
-    , doBpWithCipherChannel // 1. 只发到 bp@pre 邮箱的，但是有我的名字
-    , doBpZixiaChannel      // 2. 同时发给 zixia@pre 和  bp@pre 邮箱
-    , doZixiaChannel        // 3. 只发到 zixia@pre 邮箱
-
-    , doFormChannel         // 4. 通过表单提交(JsForm)
-    , doApplyChannel        // 5. PreAngel申请表(MikeCRM)
-    , doIntviuChannel       // 6. 橙云面试视频(IntViu)
-
-    , doPlugAndPlayChannel  // 7. Plug and Play BP
-    , doReviewChannel       // 8. PA项目评估
-  ]
+  /**********************************************/
 
   /**
-  * Shuffle an array
-  * http://stackoverflow.com/a/25984542/1123955
-  * http://jsperf.com/fyshuffle
-  */
-  function fy(a, b, c, d) { c=a.length;while(c)b=Math.random()*(--c+1)|0,d=a[c],a[c]=a[b],a[b]=d }
-  fy(tasks)
+   * Start Cleaning
+   */
+  let numProceed = 0
 
-  for (var i=0; i<tasks.length; i++) {
-    numProcceed += tasks[i]()
+  const tasks = shuffleArray([
+    doBulkChannel,           // 0. 群发邮件，并且不是发到我的邮箱的
 
-//    Logger.log(tasks[i].name)
+    doBpWithCipherChannel,  // 1. 只发到 bp@pre 邮箱的，但是有我的名字
+    doBpZixiaChannel,       // 2. 同时发给 zixia@pre 和  bp@pre 邮箱
+    doZixiaChannel,         // 3. 只发到 zixia@pre 邮箱
+
+    doFormChannel,          // 4. 通过表单提交(JsForm)
+    doApplyChannel,         // 5. PreAngel申请表(MikeCRM)
+    doIntviuChannel,        // 6. 橙云面试视频(IntViu)
+
+    doPlugAndPlayChannel,   // 7. Plug and Play BP
+    doReviewChannel,        // 8. PA项目评估
+  ])
+
+  for (let i = 0; i < tasks.length; i++) {
+    numProceed += tasks[i]()
+
+    // Logger.log(tasks[i].name)
 
     if (Gas.isYourTime()) {
-      log(log.DEBUG, 'MailBot breaked after procceed %s mails, runned %s seconds', numProcceed, Gas.getLifeSeconds())
+      log(log.DEBUG, 'MailBot timeout after proceed %s mails, ran %s seconds', numProceed, Gas.getLifeSeconds())
       break
     }
   }
 
   // End Cleaning
   //
-  /////////////////////////////////////////////////////////////////////
+  /**********************************************/
 
-  if (numProcceed) log(log.DEBUG, 'MailBot procceed %s mails, runned %s seconds', numProcceed, Gas.getLifeSeconds())
+  if (numProceed) log(log.DEBUG, 'MailBot procceed %s mails, runned %s seconds', numProceed, Gas.getLifeSeconds())
 
+  return numProceed
 
-  return numProcceed
-
-
-
-
-
-
-
-
-  //////////////////////////////////////////////////////////////////////////
-  //
-  // END: Main code above execute END here
-  //
-  //////////////////////////////////////////////////////////////////////////
-
-
-
+  /*********************************************
+   *
+   * END: Main code above execute END here
+   *
+  **********************************************/
 
   /******************************************************
   *
@@ -98,14 +79,12 @@ function MailBot() {
   *
   *
   */
-  function doBulkChannel() {
+  function doBulkChannel () {
 
     var whiteFromList = [
       'plugandplaychina.com',
       'plugandplaytechcenter.com',
-      'plugandplaytc.com',
       'pnptc.com',
-      'pnp.vc',
 
       'jsform.com',
 
@@ -123,12 +102,12 @@ function MailBot() {
       'w3.org',
       'pnp.vc', // PNP 有自己独立的Channel
       'pnptc.com',
-      'ml-gde@googlegroups.com',
+      'googlegroups.com',
       'apache.org',
       'kaiyuanshe.org',
     ]
 
-    var bulkChannel = new GmailChannel ({
+    var bulkChannel = new GmailChannel({
       name: 'bulk'
       , keywords: []
       , labels: [
@@ -261,14 +240,6 @@ function MailBot() {
 
   }
 
-
-
-
-
-
-
-
-
   /***************************************************
   *
   *
@@ -308,7 +279,6 @@ function MailBot() {
       , Mailer.labelDel_NotBizPlan
       , Mailer.labelAdd_BizPlan
 
-
       , Ticketor.create
       , Ticketor.process
       , Mailer.trashBizplan
@@ -320,15 +290,6 @@ function MailBot() {
     return bpZixiaChannel.done(Tracker.logOnEnd)
 
   }
-
-
-
-
-
-
-
-
-
 
   /******************************************************
   *
@@ -376,15 +337,6 @@ function MailBot() {
     return zixiaChannel.done(Tracker.logOnEnd)
 
   }
-
-
-
-
-
-
-
-
-
 
   /******************************************************
   *
@@ -434,15 +386,6 @@ function MailBot() {
 
   }
 
-
-
-
-
-
-
-
-
-
   /******************************************************
   *
   *
@@ -485,16 +428,6 @@ function MailBot() {
     return applyChannel.done(Tracker.logOnEnd)
 
   }
-
-
-
-
-
-
-
-
-
-
 
   /******************************************************
   *
@@ -571,7 +504,7 @@ function MailBot() {
       , Ticketor.tryToPair
       , Ticketor.noteOrCreate
       , Ticketor.groupPnp
-//      , Ticketor.assignChen
+      // , Ticketor.assignChen
 
       , Mailer.labelAdd_ToBeDeleted
       , Mailer.moveToArchive
@@ -628,3 +561,5 @@ function MailBot() {
 
   }
 }
+
+export { MailBot }
